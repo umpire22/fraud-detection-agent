@@ -77,15 +77,6 @@ def run():
         ax.axis("equal")
         st.pyplot(fig)
 
-        # 📊 Visualization - Bar Chart
-        st.subheader("📊 Transaction Amounts by Risk Category")
-        fig2, ax2 = plt.subplots()
-        df.groupby("Risk_Score")["Amount"].sum().plot(kind="bar", ax2=ax2, color=["red", "green"])
-        ax2.set_ylabel("Total Transaction Amount")
-        ax2.set_xlabel("Risk Category")
-        ax2.set_title("Total Transaction Value by Fraud Risk")
-        st.pyplot(fig2)
-
         # ✅ Download analyzed CSV
         st.subheader("⬇️ Download Results")
         buffer = io.BytesIO()
