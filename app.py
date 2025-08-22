@@ -1,59 +1,102 @@
 import streamlit as st
 import pandas as pd
+import io
 import matplotlib.pyplot as plt
-import os
 
-# 🎨 Page setup
-st.set_page_config(page_title="Fraud Detection Agent", page_icon="🛡️", layout="wide")
+# Custom styling
+def add_styles():
+    st.markdown("""
+        <style>
+        .reportview-container {
+            background: linear-gradient(to bottom right, #e6f0ff, #ffffff);
+        }
+        .stButton>button {
+            background-color: #0047AB;
+            color: white;
+            border-radius: 10px;
+            padding: 0.5em 1em;
+        }
+        .stButton>button:hover {
+            background-color: #0066FF;
+            color: white;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
-# 🌟 App title
-st.markdown("<h1 style='color:#4CAF50;text-align:center;'>🛡️ Fraud Detection Agent</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center;color:gray;'>AI-powered demo for detecting unusual transactions</p>", unsafe_allow_html=True)
+def highlight_risk(val):
+    """Color cells based on fraud risk."""
+    color = "red" if "High" in val else "green"
+    return f"color: {color}; font-weight: bold"
 
-# ✅ Always show this
-st.success("✅ The app loaded successfully!")
+def run():
+    add_styles()
+    st.title("💳 Fraud Detection Agent")
+    st.markdown(
+        "An **AI-powered fraud detection demo** that analyzes transaction data, "
+        "flags risky activities, and provides instant insights. <br>"
+        "**Note**: This is for *educational and demonstration* purposes only.",
+        unsafe_allow_html=True,
+    )
 
-# 📂 File upload
-st.sidebar.header("Upload Transactions CSV")
-uploaded_file = st.sidebar.file_uploader("Choose a CSV file", type="csv")
+    uploaded_file = st.file_uploader("📂 Upload Transactions CSV", type="csv")
 
-# 📊 If file uploaded
-if uploaded_file is not None:
-    try:
+    if uploaded_file:
         df = pd.read_csv(uploaded_file)
 
-        st.subheader("📋 Preview of Uploaded Data")
+        # Show uploaded data
+        st.subheader("📊 Uploaded Transactions")
         st.dataframe(df.head())
 
-        # --- Simple Fraud Rule: Flag transactions over threshold
-        threshold = 2000
-        df["Flagged"] = df["Amount"] > threshold
+        # Simple fraud rules
+        df["Risk_Score"] = df["Amount"].apply(
+            lambda x: "🚨 High Risk" if x > 5000 else "✅ Low Risk"
+        )
 
-        # Show flagged transactions
-        st.subheader("🚨 Flagged Transactions")
-        flagged = df[df["Flagged"] == True]
-        if not flagged.empty:
-            st.error("⚠️ Suspicious transactions found!")
-            st.dataframe(flagged)
-        else:
-            st.success("✅ No suspicious transactions detected.")
+        # Show analyzed data with color styling
+        st.subheader("🔎 Analyzed Transactions")
+        styled_df = df.style.applymap(highlight_risk, subset=["Risk_Score"])
+        st.dataframe(styled_df)
 
-        # 📈 Plot transaction amounts
-        st.subheader("📊 Transaction Amounts")
+        # Summary stats
+        high_risk = df[df["Risk_Score"].str.contains("High")]
+        st.warning(f"⚠️ {len(high_risk)} High-Risk Transactions Detected")
+        st.info(f"✅ {len(df) - len(high_risk)} Safe Transactions Found")
+
+        # 📊 Visualization - Pie Chart
+        st.subheader("📊 Fraud Risk Distribution")
+        risk_counts = df["Risk_Score"].value_counts()
+
         fig, ax = plt.subplots()
-        ax.plot(df["Amount"], marker="o", linestyle="-", color="blue", label="Transactions")
-        ax.axhline(y=threshold, color="red", linestyle="--", label="Fraud Threshold")
-        ax.set_title("Transactions vs Threshold")
-        ax.set_xlabel("Transaction #")
-        ax.set_ylabel("Amount")
-        ax.legend()
+        ax.pie(
+            risk_counts, 
+            labels=risk_counts.index, 
+            autopct='%1.1f%%',
+            startangle=90,
+            colors=["red", "green"]
+        )
+        ax.axis("equal")
         st.pyplot(fig)
 
-    except Exception as e:
-        st.error(f"❌ Error while processing file: {e}")
+        # 📊 Visualization - Bar Chart
+        st.subheader("📊 Transaction Amounts by Risk Category")
+        fig2, ax2 = plt.subplots()
+        df.groupby("Risk_Score")["Amount"].sum().plot(kind="bar", ax2=ax2, color=["red", "green"])
+        ax2.set_ylabel("Total Transaction Amount")
+        ax2.set_xlabel("Risk Category")
+        ax2.set_title("Total Transaction Value by Fraud Risk")
+        st.pyplot(fig2)
 
-else:
-    st.info("📂 Please upload a CSV file in the sidebar to begin analysis.")
+        # ✅ Download analyzed CSV
+        st.subheader("⬇️ Download Results")
+        buffer = io.BytesIO()
+        df.to_csv(buffer, index=False)
+        buffer.seek(0)
 
-# ℹ️ Footer note
-st.markdown("<br><hr><p style='text-align:center;color:gray;'>This demo is for educational purposes only. Not for real-world banking use.</p>", unsafe_allow_html=True)
+        st.download_button(
+            label="📥 Download Analyzed CSV",
+            data=buffer,
+            file_name="fraud_analysis_results.csv",
+            mime="text/csv"
+        )
+
+        st.success("✅ Analysis Complete. Results ready for download.")
