@@ -1,47 +1,59 @@
 import streamlit as st
 import pandas as pd
-import io
+import matplotlib.pyplot as plt
+import os
 
-def run():
-    st.title("💳 Fraud Detection Agent")
-    st.markdown(
-        "Upload a **CSV file** of transactions and get instant fraud risk analysis. "
-        "This tool is for **educational and demo purposes only**, not production banking use."
-    )
+# 🎨 Page setup
+st.set_page_config(page_title="Fraud Detection Agent", page_icon="🛡️", layout="wide")
 
-    uploaded_file = st.file_uploader("📂 Upload Transactions CSV", type="csv")
+# 🌟 App title
+st.markdown("<h1 style='color:#4CAF50;text-align:center;'>🛡️ Fraud Detection Agent</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;color:gray;'>AI-powered demo for detecting unusual transactions</p>", unsafe_allow_html=True)
 
-    if uploaded_file:
+# ✅ Always show this
+st.success("✅ The app loaded successfully!")
+
+# 📂 File upload
+st.sidebar.header("Upload Transactions CSV")
+uploaded_file = st.sidebar.file_uploader("Choose a CSV file", type="csv")
+
+# 📊 If file uploaded
+if uploaded_file is not None:
+    try:
         df = pd.read_csv(uploaded_file)
 
-        # Show uploaded data
-        st.subheader("📊 Uploaded Transactions")
+        st.subheader("📋 Preview of Uploaded Data")
         st.dataframe(df.head())
 
-        # Simple fraud rules
-        df["Risk_Score"] = df["Amount"].apply(
-            lambda x: "🚨 High" if x > 5000 else "✅ Low"
-        )
+        # --- Simple Fraud Rule: Flag transactions over threshold
+        threshold = 2000
+        df["Flagged"] = df["Amount"] > threshold
 
-        # Show analyzed data
-        st.subheader("🔎 Analyzed Transactions")
-        st.dataframe(df)
+        # Show flagged transactions
+        st.subheader("🚨 Flagged Transactions")
+        flagged = df[df["Flagged"] == True]
+        if not flagged.empty:
+            st.error("⚠️ Suspicious transactions found!")
+            st.dataframe(flagged)
+        else:
+            st.success("✅ No suspicious transactions detected.")
 
-        # Summary stats
-        high_risk = df[df["Risk_Score"] == "🚨 High"]
-        st.warning(f"⚠️ {len(high_risk)} High-Risk Transactions Detected")
+        # 📈 Plot transaction amounts
+        st.subheader("📊 Transaction Amounts")
+        fig, ax = plt.subplots()
+        ax.plot(df["Amount"], marker="o", linestyle="-", color="blue", label="Transactions")
+        ax.axhline(y=threshold, color="red", linestyle="--", label="Fraud Threshold")
+        ax.set_title("Transactions vs Threshold")
+        ax.set_xlabel("Transaction #")
+        ax.set_ylabel("Amount")
+        ax.legend()
+        st.pyplot(fig)
 
-        # ✅ Download analyzed CSV
-        st.subheader("⬇️ Download Results")
-        buffer = io.BytesIO()
-        df.to_csv(buffer, index=False)
-        buffer.seek(0)
+    except Exception as e:
+        st.error(f"❌ Error while processing file: {e}")
 
-        st.download_button(
-            label="📥 Download Analyzed CSV",
-            data=buffer,
-            file_name="fraud_analysis_results.csv",
-            mime="text/csv"
-        )
+else:
+    st.info("📂 Please upload a CSV file in the sidebar to begin analysis.")
 
-        st.success("✅ Analysis Complete. Results ready for download.")
+# ℹ️ Footer note
+st.markdown("<br><hr><p style='text-align:center;color:gray;'>This demo is for educational purposes only. Not for real-world banking use.</p>", unsafe_allow_html=True)
