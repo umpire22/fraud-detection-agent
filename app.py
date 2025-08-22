@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import io
-import matplotlib.pyplot as plt
 
 # Custom styling
 def add_styles():
@@ -61,21 +60,6 @@ def run():
         high_risk = df[df["Risk_Score"].str.contains("High")]
         st.warning(f"⚠️ {len(high_risk)} High-Risk Transactions Detected")
         st.info(f"✅ {len(df) - len(high_risk)} Safe Transactions Found")
-
-        # 📊 Visualization - Pie Chart
-        st.subheader("📊 Fraud Risk Distribution")
-        risk_counts = df["Risk_Score"].value_counts()
-
-        fig, ax = plt.subplots()
-        ax.pie(
-            risk_counts, 
-            labels=risk_counts.index, 
-            autopct='%1.1f%%',
-            startangle=90,
-            colors=["red", "green"]
-        )
-        ax.axis("equal")
-        st.pyplot(fig)
 
         # ✅ Download analyzed CSV
         st.subheader("⬇️ Download Results")
