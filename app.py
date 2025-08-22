@@ -2,39 +2,11 @@ import streamlit as st
 import pandas as pd
 import io
 
-# Custom styling
-def add_styles():
-    st.markdown("""
-        <style>
-        .reportview-container {
-            background: linear-gradient(to bottom right, #e6f0ff, #ffffff);
-        }
-        .stButton>button {
-            background-color: #0047AB;
-            color: white;
-            border-radius: 10px;
-            padding: 0.5em 1em;
-        }
-        .stButton>button:hover {
-            background-color: #0066FF;
-            color: white;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-def highlight_risk(val):
-    """Color cells based on fraud risk."""
-    color = "red" if "High" in val else "green"
-    return f"color: {color}; font-weight: bold"
-
 def run():
-    add_styles()
     st.title("💳 Fraud Detection Agent")
     st.markdown(
-        "An **AI-powered fraud detection demo** that analyzes transaction data, "
-        "flags risky activities, and provides instant insights. <br>"
-        "**Note**: This is for *educational and demonstration* purposes only.",
-        unsafe_allow_html=True,
+        "Upload a **CSV file** of transactions and get instant fraud risk analysis. "
+        "This tool is for **educational and demo purposes only**, not production banking use."
     )
 
     uploaded_file = st.file_uploader("📂 Upload Transactions CSV", type="csv")
@@ -48,18 +20,16 @@ def run():
 
         # Simple fraud rules
         df["Risk_Score"] = df["Amount"].apply(
-            lambda x: "🚨 High Risk" if x > 5000 else "✅ Low Risk"
+            lambda x: "🚨 High" if x > 5000 else "✅ Low"
         )
 
-        # Show analyzed data with color styling
+        # Show analyzed data
         st.subheader("🔎 Analyzed Transactions")
-        styled_df = df.style.applymap(highlight_risk, subset=["Risk_Score"])
-        st.dataframe(styled_df)
+        st.dataframe(df)
 
         # Summary stats
-        high_risk = df[df["Risk_Score"].str.contains("High")]
+        high_risk = df[df["Risk_Score"] == "🚨 High"]
         st.warning(f"⚠️ {len(high_risk)} High-Risk Transactions Detected")
-        st.info(f"✅ {len(df) - len(high_risk)} Safe Transactions Found")
 
         # ✅ Download analyzed CSV
         st.subheader("⬇️ Download Results")
