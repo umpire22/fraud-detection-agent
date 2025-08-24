@@ -32,9 +32,22 @@ if uploaded_file is not None:
         # Show flagged transactions
         st.subheader("🚨 Flagged Transactions")
         flagged = df[df["Flagged"] == True]
+
         if not flagged.empty:
             st.error("⚠️ Suspicious transactions found!")
             st.dataframe(flagged)
+
+            # 📋 Copy suspicious transactions
+            flagged_text = flagged.to_csv(index=False)
+            st.text_area("📋 Copy Suspicious Transactions (CSV format)", flagged_text, height=200)
+
+            # ⬇️ Download suspicious transactions
+            st.download_button(
+                label="⬇️ Download Flagged Transactions",
+                data=flagged_text,
+                file_name="flagged_transactions.csv",
+                mime="text/csv"
+            )
         else:
             st.success("✅ No suspicious transactions detected.")
 
