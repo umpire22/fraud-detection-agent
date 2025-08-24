@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from io import StringIO
 import os
 
 # 🎨 Page setup
@@ -13,16 +14,26 @@ st.markdown("<p style='text-align:center;color:gray;'>AI-powered demo for detect
 # ✅ Always show this
 st.success("✅ The app loaded successfully!")
 
-# 📂 File upload
-st.sidebar.header("Upload Transactions CSV")
+# 📂 Input options
+st.sidebar.header("Input Transactions Data")
 uploaded_file = st.sidebar.file_uploader("Choose a CSV file", type="csv")
+pasted_data = st.sidebar.text_area("Or paste CSV data here", height=200)
 
-# 📊 If file uploaded
-if uploaded_file is not None:
+# Function to read data from file or pasted text
+def load_data(file, text):
+    if file is not None:
+        return pd.read_csv(file)
+    elif text.strip() != "":
+        return pd.read_csv(StringIO(text))
+    else:
+        return None
+
+df = load_data(uploaded_file, pasted_data)
+
+# 📊 If data exists
+if df is not None:
     try:
-        df = pd.read_csv(uploaded_file)
-
-        st.subheader("📋 Preview of Uploaded Data")
+        st.subheader("📋 Preview of Data")
         st.dataframe(df.head())
 
         # --- Simple Fraud Rule: Flag transactions over threshold
@@ -63,10 +74,10 @@ if uploaded_file is not None:
         st.pyplot(fig)
 
     except Exception as e:
-        st.error(f"❌ Error while processing file: {e}")
+        st.error(f"❌ Error while processing data: {e}")
 
 else:
-    st.info("📂 Please upload a CSV file in the sidebar to begin analysis.")
+    st.info("📂 Please upload a CSV file or paste CSV data in the sidebar to begin analysis.")
 
 # ℹ️ Footer note
 st.markdown("<br><hr><p style='text-align:center;color:gray;'>This demo is for educational purposes only. Not for real-world banking use.</p>", unsafe_allow_html=True)
